@@ -14,14 +14,14 @@ _LOCK_KEY = 7_420_002
 
 ACQUIRE_SQL = """
 WITH cleanup AS (
-    DELETE FROM llm_calls WHERE at < clock_timestamp() - make_interval(secs => $2 * 5)
+    DELETE FROM llm_calls WHERE at < clock_timestamp() - make_interval(secs => $2::float8 * 5)
 ),
 win AS (
     SELECT count(*) AS n, min(at) AS oldest
     FROM llm_calls WHERE at > clock_timestamp() - make_interval(secs => $2)
 )
 SELECT n,
-       EXTRACT(EPOCH FROM (oldest + make_interval(secs => $2) - clock_timestamp()))::float AS wait_s,
+       EXTRACT(EPOCH FROM (oldest + make_interval(secs => $2::float8) - clock_timestamp()))::float AS wait_s,
        n < $1 AS allowed
 FROM win
 """
