@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Support drafts{% endblock %}</title>
+{% block head %}{% endblock %}
+<style>
+  body { font-family: system-ui, sans-serif; margin: 16px; max-width: 1100px; color: #222; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border-bottom: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f4f4f4; }
+  nav a { margin-right: 10px; }
+  .muted { color: #777; font-size: 0.9em; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; background: #eee; font-size: 0.85em; }
+  .s-draft_ready { background: #fff3c4; } .s-sent { background: #d4f5d4; }
+  .s-gen_failed, .s-send_failed { background: #ffd6d6; } .s-rejected { background: #e0e0e0; }
+  .s-approved, .s-sending { background: #d6e8ff; }
+  textarea { width: 100%; min-height: 220px; font: inherit; }
+  pre { white-space: pre-wrap; background: #f8f8f8; padding: 10px; }
+  .flash { padding: 8px; background: #eef; margin: 8px 0; }
+  button { padding: 6px 14px; margin-right: 6px; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/operator">Звернення</a>
+  <a href="/kb">База знань</a>
+  <a href="/mock-helpdesk/replies">Мок хелпдеску: доставлені відповіді</a>
+  <a href="/docs">API</a>
+</nav>
+<hr>
+{% block content %}{% endblock %}
+</body>
+</html>

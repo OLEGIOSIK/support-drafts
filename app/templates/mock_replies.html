@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block head %}<meta http-equiv="refresh" content="5">{% endblock %}
+{% block title %}Мок хелпдеску{% endblock %}
+{% block content %}
+<h2>Мок хелпдеску: відповіді, які отримали клієнти</h2>
+<p>Відповідей: <b>{{ rows|length }}</b> · тікетів з більш ніж однією відповіддю: <b>{{ dup_tickets }}</b>
+  <span class="muted">(має бути 0). «Запитів» &gt; 1 означає, що наш сервіс повторював відправку після 5xx/таймауту,
+  але завдяки Idempotency-Key клієнт отримав відповідь один раз.</span></p>
+<p class="muted"><a href="/mock-helpdesk/replies?format=json">JSON</a></p>
+<table>
+  <tr><th>id</th><th>Тікет</th><th>Відповідь</th><th>Запитів з цим ключем</th><th>Час</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>R-{{ r.id }}</td><td>{{ r.ticket_id }}</td>
+    <td>{{ r.message[:200] }}{% if r.message|length > 200 %}…{% endif %}</td>
+    <td>{{ r.attempts }}</td>
+    <td class="muted">{{ r.created_at.strftime('%H:%M:%S') }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

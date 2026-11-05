@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block head %}<meta http-equiv="refresh" content="5">{% endblock %}
+{% block content %}
+<h2>Звернення</h2>
+<p class="muted">Сторінка оновлюється кожні 5 с. Всього: {{ total }}.</p>
+<p>
+  <a href="/operator?status=all">{% if current == 'all' %}<b>усі</b>{% else %}усі{% endif %}</a>
+  {% for s in statuses %}
+    · <a href="/operator?status={{ s }}">{% if current == s %}<b>{{ s }}</b>{% else %}{{ s }}{% endif %}</a>
+      <span class="muted">({{ counts.get(s, 0) }})</span>
+  {% endfor %}
+</p>
+<table>
+  <tr><th>#</th><th>Тікет</th><th>Клієнт</th><th>Повідомлення</th><th>Статус</th><th>Створено</th></tr>
+  {% for t in rows %}
+  <tr>
+    <td><a href="/operator/tickets/{{ t.id }}">{{ t.id }}</a></td>
+    <td>{{ t.ticket_id }}</td>
+    <td>{{ t.customer_email }}</td>
+    <td><a href="/operator/tickets/{{ t.id }}">{{ t.message[:120] }}{% if t.message|length > 120 %}…{% endif %}</a></td>
+    <td><span class="pill s-{{ t.status }}">{{ t.status }}</span>
+        {% if t.llm_mode == 'stub' %}<span class="muted">stub</span>{% endif %}</td>
+    <td class="muted">{{ t.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="muted">Немає звернень у цьому статусі.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block head %}{% if t.status in ('new', 'generating', 'approved', 'sending') %}<meta http-equiv="refresh" content="3">{% endif %}{% endblock %}
+{% block title %}#{{ t.id }} · {{ t.ticket_id }}{% endblock %}
+{% block content %}
+<p><a href="/operator">← до списку</a></p>
+<h2>Звернення #{{ t.id }} · {{ t.ticket_id }} <span class="pill s-{{ t.status }}">{{ t.status }}</span></h2>
+
+{% if msg == 'approved' %}<div class="flash">Підтверджено — відповідь поставлено в чергу на відправку.</div>
+{% elif msg == 'rejected' %}<div class="flash">Чернетку відхилено.</div>
+{% elif msg == 'retried' %}<div class="flash">Повтор поставлено в чергу.</div>
+{% elif msg == 'regenerating' %}<div class="flash">Чернетку генеруємо заново.</div>
+{% elif msg == 'empty' %}<div class="flash">Текст відповіді порожній.</div>
+{% elif msg == 'conflict' %}<div class="flash">Дію не виконано: звернення вже в іншому статусі (можливо, його обробив інший оператор).</div>
+{% endif %}
+
+<p class="muted">
+  Клієнт: {{ t.customer_email }} · event_id: {{ t.event_id }} · доставок вебхука: {{ t.received_count }}
+  · отримано: {{ t.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+  {% if t.sent_at %} · надіслано: {{ t.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}
+</p>
+
+<h3>Повідомлення клієнта</h3>
+<pre>{{ t.message }}</pre>
+
+{% if t.status in ('new', 'generating') %}
+  <p><i>Чернетка генерується… (спроба {{ t.gen_attempts }})</i></p>
+{% endif %}
+
+{% if t.last_error %}<p class="muted">Остання помилка: {{ t.last_error }}</p>{% endif %}
+
+{% if t.status == 'draft_ready' %}
+  <h3>Чернетка {% if t.llm_mode == 'stub' %}<span class="muted">(статична — сервіс без API-ключа)</span>{% endif %}</h3>
+  <form method="post" action="/operator/tickets/{{ t.id }}/approve">
+    <textarea name="message">{{ t.draft }}</textarea>
+    <p><button type="submit">✅ Підтвердити і надіслати</button></p>
+  </form>
+  <form method="post" action="/operator/tickets/{{ t.id }}/reject" style="display:inline">
+    <button type="submit">❌ Відхилити</button>
+  </form>
+  <form method="post" action="/operator/tickets/{{ t.id }}/regenerate" style="display:inline">
+    <button type="submit">🔄 Згенерувати заново</button>
+  </form>
+{% elif t.draft %}
+  <h3>Чернетка</h3>
+  <pre>{{ t.draft }}</pre>
+{% endif %}
+
+{% if t.final_message %}
+  <h3>Підтверджена відповідь</h3>
+  <pre>{{ t.final_message }}</pre>
+  <p class="muted">Спроб відправки: {{ t.send_attempts }} · Idempotency-Key: {{ t.idempotency_key }}
+  {% if t.helpdesk_reply_id %} · reply id у хелпдеску: {{ t.helpdesk_reply_id }}{% endif %}</p>
+{% endif %}
+
+{% if t.draft_sources %}
+  <h3>Використані статті</h3>
+  <ul>{% for s in t.draft_sources %}<li><a href="{{ s.url }}" target="_blank">{{ s.title }}</a></li>{% endfor %}</ul>
+{% endif %}
+
+{% if t.status in ('gen_failed', 'send_failed') %}
+  <form method="post" action="/operator/tickets/{{ t.id }}/retry"><button type="submit">🔁 Повторити</button></form>
+{% endif %}
+{% if t.status == 'gen_failed' %}
+  <form method="post" action="/operator/tickets/{{ t.id }}/reject"><button type="submit">❌ Закрити без відповіді</button></form>
+{% endif %}
+{% if t.status == 'rejected' %}
+  <form method="post" action="/operator/tickets/{{ t.id }}/regenerate"><button type="submit">🔄 Згенерувати заново</button></form>
+{% endif %}
+{% endblock %}
