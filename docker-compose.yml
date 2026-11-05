@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: support
+      POSTGRES_PASSWORD: support
+      POSTGRES_DB: support
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support -d support"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    ports:
+      - "5432:5432"
+
+  # HTTP: webhook, operator UI, /health, helpdesk mock.
+  app:
+    build: .
+    environment: &app-env
+      DATABASE_URL: postgresql://support:support@db:5432/support
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-claude-opus-5-5}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      INTERNAL_BASE_URL: http://app:8000
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
+      OPERATOR_PASSWORD: ${OPERATOR_PASSWORD:-}
+      MOCK_FAIL_RATE: ${MOCK_FAIL_RATE:-0.2}
+      MOCK_SLOW_RATE: ${MOCK_SLOW_RATE:-0.1}
+      RUN_WORKER: "false"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Background processing: LLM drafts + delivery to helpdesk.
+  # Scale with `docker compose up --scale worker=3` — the rate limit is global (in Postgres).
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    environment:
+      <<: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_started
+
+volumes:
+  pgdata:
